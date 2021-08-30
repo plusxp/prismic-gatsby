@@ -1,6 +1,7 @@
 import * as gqlc from "graphql-compose";
 import * as gatsbyFs from "gatsby-source-filesystem";
 import * as imgixGatsby from "@imgix/gatsby/dist/pluginHelpers";
+import * as gatsbyPluginImageGraphQLUtils from "gatsby-plugin-image/graphql-utils";
 import * as prismicT from "@prismicio/types";
 import * as RTE from "fp-ts/ReaderTaskEither";
 import * as O from "fp-ts/Option";
@@ -13,6 +14,7 @@ import { sanitizeImageURL } from "../lib/sanitizeImageURL";
 import { stripURLQueryParameters } from "../lib/stripURLParameters";
 
 import { Dependencies } from "../types";
+import { resolveGatsbyImageData } from "../imgix/gatsbyPluginImage";
 
 /**
  * Returns the URL of an image from the value of an Image field.
@@ -141,20 +143,27 @@ export const buildImageBaseFieldConfigMap: RTE.ReaderTaskEither<
 		RTE.right(withExistingURLImgixParameters(scope.imgixTypes.fields.fluid)),
 	),
 	RTE.bind("gatsbyImageDataField", (scope) =>
-		pipe(
-			RTE.right(
-				withExistingURLImgixParameters(scope.imgixTypes.fields.gatsbyImageData),
+		RTE.right(
+			gatsbyPluginImageGraphQLUtils.getGatsbyImageFieldConfig(
+				resolveGatsbyImageData,
 			),
-			// This field is 'JSON!' by default (i.e. non-nullable). If an image is
-			// not set in Prismic, however, this field throws a GraphQL error saying a
-			// non-nullable field was returned a null value. This should not happen
-			// since the field is nested in a nullable object type, but it happens
-			// anyway.
-			//
-			// We're making the field nullable manually here.
-			RTE.chainFirst((field) => RTE.fromIO(() => (field.type = "JSON"))),
 		),
 	),
+	//RTE.bind("gatsbyImageDataField", (scope) =>
+	//	pipe(
+	//		RTE.right(
+	//			withExistingURLImgixParameters(scope.imgixTypes.fields.gatsbyImageData),
+	//		),
+	//		// This field is 'JSON!' by default (i.e. non-nullable). If an image is
+	//		// not set in Prismic, however, this field throws a GraphQL error saying a
+	//		// non-nullable field was returned a null value. This should not happen
+	//		// since the field is nested in a nullable object type, but it happens
+	//		// anyway.
+	//		//
+	//		// We're making the field nullable manually here.
+	//		RTE.chainFirst((field) => RTE.fromIO(() => (field.type = "JSON"))),
+	//	),
+	//),
 	RTE.map((scope) => ({
 		alt: "String",
 		copyright: "String",
