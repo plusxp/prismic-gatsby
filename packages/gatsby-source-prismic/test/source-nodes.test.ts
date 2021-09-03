@@ -169,32 +169,25 @@ test("uses apiEndpoint plugin option if provided", async (t) => {
 	t.pass();
 });
 
-test("embed fields are normalized to inferred nodes", async (t) => {
+// This check is required to support Gatsby 4 parallelization.
+test("does not modify the GraphQL schema", async (t) => {
 	const gatsbyContext = createGatsbyContext();
 	const pluginOptions = createPluginOptions(t);
 
-	const customTypeModel = createMockCustomTypeModelWithFields(t, {
-		embed: prismicM.model.embed({ seed: t.title }),
-	});
-	const document = prismicM.value.document({
-		seed: t.title,
-		model: customTypeModel,
-	});
 	const repositoryResponse = prismicM.api.repository({ seed: t.title });
 	const queryResponse = prismicM.api.query({
 		seed: t.title,
-		documents: [document],
+		documents: [
+			prismicM.value.document({ seed: t.title }),
+			prismicM.value.document({ seed: t.title }),
+		],
 	});
-
-	pluginOptions.customTypeModels = [customTypeModel];
 
 	server.use(
 		createAPIRepositoryMockedRequest({
 			pluginOptions,
 			repositoryResponse,
 		}),
-	);
-	server.use(
 		createAPIQueryMockedRequest({
 			pluginOptions,
 			repositoryResponse,
@@ -203,99 +196,15 @@ test("embed fields are normalized to inferred nodes", async (t) => {
 	);
 
 	// @ts-expect-error - Partial gatsbyContext provided
-	await createSchemaCustomization(gatsbyContext, pluginOptions);
-	// @ts-expect-error - Partial gatsbyContext provided
 	await sourceNodes(gatsbyContext, pluginOptions);
 
-	const createNodeStub = gatsbyContext.actions.createNode as sinon.SinonStub;
-
-	t.true(
-		createNodeStub.calledWith(
-			sinon.match({
-				prismicId: document.id,
-				data: {
-					embed: sinon.match.string,
-				},
-			}),
-		),
+	t.is((gatsbyContext.actions.createTypes as sinon.SinonStub).callCount, 0);
+	t.is(
+		(gatsbyContext.actions.addThirdPartySchema as sinon.SinonStub).callCount,
+		0,
 	);
-
-	t.true(
-		createNodeStub.calledWith(
-			sinon.match({
-				embed_url: document.data.embed.embed_url,
-				internal: sinon.match({
-					type: "PrismicPrefixEmbedType",
-				}),
-			}),
-		),
-	);
-});
-
-test("integration fields are normalized to inferred nodes", async (t) => {
-	const gatsbyContext = createGatsbyContext();
-	const pluginOptions = createPluginOptions(t);
-
-	const customTypeModel = createMockCustomTypeModelWithFields(t, {
-		integrationFields: prismicM.model.integrationFields({ seed: t.title }),
-	});
-	// A known ID is needed to test the type name later in the test.
-	customTypeModel.id = "foo";
-	const document = prismicM.value.document({
-		seed: t.title,
-		model: customTypeModel,
-	});
-	const repositoryResponse = prismicM.api.repository({ seed: t.title });
-	const queryResponse = prismicM.api.query({
-		seed: t.title,
-		documents: [document],
-	});
-
-	pluginOptions.customTypeModels = [customTypeModel];
-
-	server.use(
-		createAPIRepositoryMockedRequest({
-			pluginOptions,
-			repositoryResponse,
-		}),
-	);
-	server.use(
-		createAPIQueryMockedRequest({
-			pluginOptions,
-			repositoryResponse,
-			queryResponse,
-		}),
-	);
-
-	// @ts-expect-error - Partial gatsbyContext provided
-	await createSchemaCustomization(gatsbyContext, pluginOptions);
-	// @ts-expect-error - Partial gatsbyContext provided
-	await sourceNodes(gatsbyContext, pluginOptions);
-
-	const createNodeStub = gatsbyContext.actions.createNode as sinon.SinonStub;
-
-	for (const doc of queryResponse.results) {
-		t.true(
-			createNodeStub.calledWith(
-				sinon.match({
-					prismicId: doc.id,
-					data: sinon.match({
-						integrationFields: sinon.match.string,
-					}),
-				}),
-			),
-		);
-	}
-
-	t.true(
-		createNodeStub.calledWith(
-			sinon.match({
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-				prismicId: document.data.integrationFields!.id,
-				internal: sinon.match({
-					type: "PrismicPrefixFooDataIntegrationFieldsIntegrationType",
-				}),
-			}),
-		),
+	t.is(
+		(gatsbyContext.actions.createFieldExtension as sinon.SinonStub).callCount,
+		0,
 	);
 });

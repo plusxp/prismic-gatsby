@@ -12,6 +12,19 @@ export const DEFAULT_CUSTOM_TYPES_API_ENDPOINT =
 	"https://customtypes.prismic.io/customtypes";
 
 /**
+ * Prismic API document fields returned for image fields that are **not** thumbnails.
+ *
+ * These fields are filtered out from the API response to extract the field's
+ * thumbnails. The API includes thumbnails adjacent to these fields.
+ */
+export const PRISMIC_API_IMAGE_FIELDS = [
+	"alt",
+	"copyright",
+	"dimensions",
+	"url",
+];
+
+/**
  * Default Imgix URL parameters for `gatsby-plugin-image` fields.
  *
  * These defaults provide a good balance between image quality and filesize.

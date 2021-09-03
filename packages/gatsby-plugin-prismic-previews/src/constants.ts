@@ -1,27 +1,16 @@
+import * as pkg from "../package.json";
+
 /**
  * Version of the gatsby-plugin-prismic-preview plugin. This version may be
  * displayed publicly to help debug errors.
  */
-export const VERSION = "4.0.0";
+export const VERSION = pkg.version;
 
 /**
  * Symbol used to identify if a value is a proxy. Attach this to proxies (done
  * automatically via `lib/createGetProxy`).
  */
 export const IS_PROXY = Symbol("IS_PROXY");
-
-/**
- * Prismic API document fields returned for image fields that are **not** thumbnails.
- *
- * These fields are filtered out from the API response to extract the field's
- * thumbnails. The API includes thumbnails adjacent to these fields.
- */
-export const PRISMIC_API_IMAGE_FIELDS = [
-	"alt",
-	"copyright",
-	"dimensions",
-	"url",
-];
 
 /**
  * Default value for the `toolbar` plugin option which determines which version
